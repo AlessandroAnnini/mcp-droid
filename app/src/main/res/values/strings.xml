@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">MCPDroid</string>
+    <string name="notification_channel_name">MCP Server</string>
+    <string name="notification_channel_description">Keeps the MCP server running in the background</string>
+    <string name="notification_title">MCP Server Running</string>
+    <string name="notification_text">MCP tools available on this phone</string>
+    <string name="notification_text_with_capture">MCP tools available (screen capture active)</string>
+    <string name="notification_listener_label">MCPDroid Notification Reader</string>
+</resources>

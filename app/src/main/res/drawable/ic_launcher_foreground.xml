@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Phone body -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M38,24 L70,24 Q74,24 74,28 L74,80 Q74,84 70,84 L38,84 Q34,84 34,80 L34,28 Q34,24 38,24 Z" />
+    <!-- Screen -->
+    <path
+        android:fillColor="#1976D2"
+        android:pathData="M40,30 L68,30 L68,74 L40,74 Z" />
+    <!-- Home dot -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,76.5 m-2.5,0 a2.5,2.5 0 1,0 5,0 a2.5,2.5 0 1,0 -5,0 Z" />
+    <!-- WiFi arc (outer) -->
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="2"
+        android:fillColor="#00000000"
+        android:pathData="M42,54 Q54,38 66,54" />
+    <!-- WiFi arc (inner) -->
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="2"
+        android:fillColor="#00000000"
+        android:pathData="M46,57 Q54,46 62,57" />
+    <!-- Signal dot -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,60 m-2.5,0 a2.5,2.5 0 1,0 5,0 a2.5,2.5 0 1,0 -5,0 Z" />
+</vector>
