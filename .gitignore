@@ -15,4 +15,5 @@ build/
 local.properties
 *.keystore
 !debug.keystore
+.kotlin/
 .cursor/
