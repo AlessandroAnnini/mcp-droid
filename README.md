@@ -2,6 +2,11 @@
 
 An Android app that exposes phone capabilities as MCP tools over HTTP. Any MCP client (Hermes Agent, Claude Desktop, MCP Inspector, etc.) can connect and use them.
 
+<p align="center">
+  <img src="docs/screenshot-server.png" width="300" alt="Server tab" />
+  <img src="docs/screenshot-log.png" width="300" alt="Event log tab" />
+</p>
+
 ## Architecture
 
 ```mermaid
