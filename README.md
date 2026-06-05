@@ -92,9 +92,9 @@ Copy the config snippet from the app (or fill in manually) and add it to your MC
 ```yaml
 mcp_servers:
   phone:
-    url: "http://<phone-tailscale-hostname>:8765/mcp"
+    url: 'http://<phone-tailscale-hostname>:8765/mcp'
     headers:
-      Authorization: "Bearer <token-from-app>"
+      Authorization: 'Bearer <token-from-app>'
     timeout: 180
     connect_timeout: 60
 ```
@@ -134,10 +134,10 @@ For full tool listing, use the MCP Inspector or your MCP client directly -- they
 
 Permissions are requested at runtime the first time a tool needs them. Grant them from the phone when prompted, or pre-grant them in Android Settings > Apps > MCPDroid > Permissions.
 
-| Permission | Tools that need it | How to grant |
-|---|---|---|
-| Camera | `capture_photo` | Runtime prompt or app settings |
-| Location | `get_location` | Runtime prompt or app settings |
+| Permission          | Tools that need it   | How to grant                                                                         |
+| ------------------- | -------------------- | ------------------------------------------------------------------------------------ |
+| Camera              | `capture_photo`      | Runtime prompt or app settings                                                       |
+| Location            | `get_location`       | Runtime prompt or app settings                                                       |
 | Notification access | `list_notifications` | Android Settings > Apps > Special app access > Notification access > enable MCPDroid |
 
 ### 7. Enable screenshot capture (optional)
@@ -151,19 +151,19 @@ Permissions are requested at runtime the first time a tool needs them. Grant the
 
 ## Tool catalog
 
-| Tool | Description |
-|---|---|
-| `ping` | Health check, returns ok and a Unix timestamp |
-| `get_device_status` | Battery level, charging state, network type, Wi-Fi, Bluetooth, device model |
-| `read_clipboard` | Read current clipboard text (works best when the app is in the foreground) |
-| `write_clipboard` | Write text to the clipboard |
-| `open_url` | Open a URL in the default browser (http/https only) |
-| `get_location` | Current GPS position (lat, lon, accuracy, timestamp) |
-| `list_files` | List recent files from MediaStore (Downloads, Images, Documents) |
-| `read_file` | Read a file by content URI (text or base64, max 5 MB) |
-| `share_file` | Share a file via the Android share sheet |
-| `capture_photo` | Take a photo with the back or front camera, returned as base64 JPEG |
-| `capture_screenshot` | Capture the screen, returned as base64 JPEG (requires one-time consent, see above) |
+| Tool                 | Description                                                                            |
+| -------------------- | -------------------------------------------------------------------------------------- |
+| `ping`               | Health check, returns ok and a Unix timestamp                                          |
+| `get_device_status`  | Battery level, charging state, network type, Wi-Fi, Bluetooth, device model            |
+| `read_clipboard`     | Read current clipboard text (works best when the app is in the foreground)             |
+| `write_clipboard`    | Write text to the clipboard                                                            |
+| `open_url`           | Open a URL in the default browser (http/https only)                                    |
+| `get_location`       | Current GPS position (lat, lon, accuracy, timestamp)                                   |
+| `list_files`         | List recent files from MediaStore (Downloads, Images, Documents)                       |
+| `read_file`          | Read a file by content URI (text or base64, max 5 MB)                                  |
+| `share_file`         | Share a file via the Android share sheet                                               |
+| `capture_photo`      | Take a photo with the back or front camera, returned as base64 JPEG                    |
+| `capture_screenshot` | Capture the screen, returned as base64 JPEG (requires one-time consent, see above)     |
 | `list_notifications` | Recent active notifications, optionally filtered by app (requires notification access) |
 
 ## Security model
@@ -182,17 +182,3 @@ The service starts as `specialUse` and dynamically elevates to additional types 
 - `capture_screenshot` holds `mediaProjection` for the entire session (the VirtualDisplay must stay alive to allow repeated captures from a single consent token).
 
 This keeps the service at the minimal privilege level (`specialUse`) when idle.
-
-## Deferred backlog
-
-- TLS for bare-LAN use without Tailscale
-- OAuth 2.1 / mTLS auth
-- Browser automation (Accessibility / WebView)
-- Audio recording and transcription
-- Contacts search
-- SMS read and send
-- Calendar read and create
-- Accessibility-service screen control
-- Notification actions and replies
-- Geofencing
-- In-app event log (server start/stop, permission grants/revocations, incoming MCP requests, errors)
