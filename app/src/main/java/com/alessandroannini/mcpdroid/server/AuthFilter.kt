@@ -1,5 +1,6 @@
 package com.alessandroannini.mcpdroid.server
 
+import com.alessandroannini.mcpdroid.infra.EventLog
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.Application
 import io.ktor.server.application.ApplicationCallPipeline
@@ -17,6 +18,9 @@ fun Application.installBearerAuth(token: String) {
         if (path.startsWith("/mcp")) {
             val authHeader = call.request.headers["Authorization"]
             if (authHeader != "Bearer $token") {
+                val remote = call.request.headers["X-Forwarded-For"]
+                    ?: call.request.local.remoteHost
+                EventLog.warn("auth", "Unauthorized request", "remote=$remote path=$path")
                 call.respond(HttpStatusCode.Unauthorized)
                 finish()
             }

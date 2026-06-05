@@ -20,6 +20,7 @@ import androidx.lifecycle.LifecycleRegistry
 import com.alessandroannini.mcpdroid.MainActivity
 import com.alessandroannini.mcpdroid.R
 import com.alessandroannini.mcpdroid.data.Settings
+import com.alessandroannini.mcpdroid.infra.EventLog
 import com.alessandroannini.mcpdroid.infra.ForegroundTypeCoordinator
 import com.alessandroannini.mcpdroid.infra.ScreenCaptureSession
 
@@ -75,7 +76,10 @@ class McpServerService : Service(), LifecycleOwner {
 
             ACTION_START_PROJECTION -> handleStartProjection(intent)
 
-            ACTION_STOP_PROJECTION -> ScreenCaptureSession.stop()
+            ACTION_STOP_PROJECTION -> {
+                ScreenCaptureSession.stop()
+                EventLog.info("projection", "Screenshot session stopped")
+            }
 
             else -> handleStart()
         }
@@ -101,6 +105,7 @@ class McpServerService : Service(), LifecycleOwner {
         ForegroundTypeCoordinator.attach { mask -> applyForegroundType(mask) }
         ServerHost.start(this, port, token, this)
         Log.i(TAG, "Service started on port $port")
+        EventLog.info("server", "Server started on port $port")
     }
 
     private fun handleStartProjection(intent: Intent) {
@@ -108,6 +113,7 @@ class McpServerService : Service(), LifecycleOwner {
         @Suppress("DEPRECATION")
         val data = intent.getParcelableExtra<Intent>(EXTRA_DATA) ?: run {
             Log.e(TAG, "ACTION_START_PROJECTION missing data extra")
+            EventLog.error("projection", "Screenshot consent data missing")
             return
         }
         // Android 14+ order: acquire type -> getMediaProjection -> start session.
@@ -116,18 +122,24 @@ class McpServerService : Service(), LifecycleOwner {
             val mpm = getSystemService(MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
             val mp = mpm.getMediaProjection(resultCode, data) ?: run {
                 Log.e(TAG, "getMediaProjection returned null")
+                EventLog.error("projection", "Failed to obtain MediaProjection token")
                 ForegroundTypeCoordinator.release(ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION)
                 return
             }
             val started = ScreenCaptureSession.start(this, mp) {
                 ForegroundTypeCoordinator.release(ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION)
+                EventLog.info("projection", "Screenshot session revoked by system")
             }
-            if (!started) {
+            if (started) {
+                EventLog.info("projection", "Screenshot session started")
+            } else {
                 mp.stop()
                 ForegroundTypeCoordinator.release(ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION)
+                EventLog.warn("projection", "Screenshot session failed to start")
             }
         } catch (e: Exception) {
             Log.e(TAG, "Failed to start projection: ${e.message}")
+            EventLog.error("projection", "Screenshot session error", e.message)
             ForegroundTypeCoordinator.release(ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION)
         }
     }
@@ -138,6 +150,7 @@ class McpServerService : Service(), LifecycleOwner {
         ForegroundTypeCoordinator.detach()
         ServerHost.stop()
         Log.i(TAG, "Service destroyed")
+        EventLog.info("server", "Server stopped")
         super.onDestroy()
     }
 

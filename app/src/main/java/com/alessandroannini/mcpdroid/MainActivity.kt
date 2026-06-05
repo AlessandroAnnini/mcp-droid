@@ -15,20 +15,31 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
 import com.alessandroannini.mcpdroid.data.Settings
+import com.alessandroannini.mcpdroid.infra.EventLog
 import com.alessandroannini.mcpdroid.infra.ScreenCaptureSession
 import com.alessandroannini.mcpdroid.notifications.McpNotificationListenerService
 import com.alessandroannini.mcpdroid.server.McpServerService
 import com.alessandroannini.mcpdroid.server.ServerHost
+import com.alessandroannini.mcpdroid.ui.LogScreen
 import com.alessandroannini.mcpdroid.ui.MainScreen
 import com.alessandroannini.mcpdroid.ui.MainScreenState
 import com.alessandroannini.mcpdroid.ui.PermissionsState
@@ -50,6 +61,7 @@ class MainActivity : ComponentActivity() {
 
     private var screenshotEnabled by mutableStateOf(ScreenCaptureSession.isActive)
     private var permissionsState by mutableStateOf(PermissionsState())
+    private var permissionsInitialized = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -57,57 +69,78 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             MaterialTheme {
-                Surface(
+                var isRunning by remember { mutableStateOf(ServerHost.isRunning) }
+                var autostartEnabled by remember {
+                    mutableStateOf(Settings.getAutostart(this@MainActivity))
+                }
+                var selectedTab by remember { mutableIntStateOf(0) }
+
+                Scaffold(
                     modifier = Modifier
                         .fillMaxSize()
                         .safeDrawingPadding(),
-                ) {
-                    var isRunning by remember { mutableStateOf(ServerHost.isRunning) }
-                    var autostartEnabled by remember {
-                        mutableStateOf(Settings.getAutostart(this@MainActivity))
+                    bottomBar = {
+                        NavigationBar {
+                            NavigationBarItem(
+                                selected = selectedTab == 0,
+                                onClick = { selectedTab = 0 },
+                                icon = { Icon(Icons.Default.Home, contentDescription = null) },
+                                label = { Text("Server") },
+                            )
+                            NavigationBarItem(
+                                selected = selectedTab == 1,
+                                onClick = { selectedTab = 1 },
+                                icon = { Icon(Icons.AutoMirrored.Filled.List, contentDescription = null) },
+                                label = { Text("Log") },
+                            )
+                        }
+                    },
+                ) { innerPadding ->
+                    when (selectedTab) {
+                        0 -> MainScreen(
+                            modifier = Modifier.padding(innerPadding),
+                            state = MainScreenState(
+                                isRunning = isRunning,
+                                port = Settings.getPort(this@MainActivity),
+                                token = Settings.getToken(this@MainActivity),
+                                autostartEnabled = autostartEnabled,
+                                screenshotEnabled = screenshotEnabled,
+                            ),
+                            permissions = permissionsState,
+                            onStartStop = {
+                                if (isRunning) {
+                                    McpServerService.stop(this@MainActivity)
+                                } else {
+                                    McpServerService.start(this@MainActivity)
+                                }
+                                isRunning = !isRunning
+                            },
+                            onAutostartToggle = { enabled ->
+                                Settings.setAutostart(this@MainActivity, enabled)
+                                autostartEnabled = enabled
+                            },
+                            onEnableScreenshot = {
+                                val mpm = getSystemService(MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
+                                projectionLauncher.launch(mpm.createScreenCaptureIntent())
+                            },
+                            onDisableScreenshot = {
+                                McpServerService.stopProjection(this@MainActivity)
+                                screenshotEnabled = false
+                            },
+                            onRequestCamera = { requestOrOpenSettings(Manifest.permission.CAMERA) },
+                            onRequestLocation = { requestOrOpenSettings(Manifest.permission.ACCESS_FINE_LOCATION) },
+                            onRequestBluetooth = { requestOrOpenSettings(Manifest.permission.BLUETOOTH_CONNECT) },
+                            onRequestMedia = { requestMediaPermissions() },
+                            onRequestNotifications = {
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                    requestOrOpenSettings(Manifest.permission.POST_NOTIFICATIONS)
+                                }
+                            },
+                            onRequestNotificationListener = { openNotificationListenerSettings() },
+                            onOpenAutostart = { openXiaomiAutostart() },
+                        )
+                        else -> LogScreen(modifier = Modifier.padding(innerPadding))
                     }
-
-                    MainScreen(
-                        state = MainScreenState(
-                            isRunning = isRunning,
-                            port = Settings.getPort(this@MainActivity),
-                            token = Settings.getToken(this@MainActivity),
-                            autostartEnabled = autostartEnabled,
-                            screenshotEnabled = screenshotEnabled,
-                        ),
-                        permissions = permissionsState,
-                        onStartStop = {
-                            if (isRunning) {
-                                McpServerService.stop(this@MainActivity)
-                            } else {
-                                McpServerService.start(this@MainActivity)
-                            }
-                            isRunning = !isRunning
-                        },
-                        onAutostartToggle = { enabled ->
-                            Settings.setAutostart(this@MainActivity, enabled)
-                            autostartEnabled = enabled
-                        },
-                        onEnableScreenshot = {
-                            val mpm = getSystemService(MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
-                            projectionLauncher.launch(mpm.createScreenCaptureIntent())
-                        },
-                        onDisableScreenshot = {
-                            McpServerService.stopProjection(this@MainActivity)
-                            screenshotEnabled = false
-                        },
-                        onRequestCamera = { requestOrOpenSettings(Manifest.permission.CAMERA) },
-                        onRequestLocation = { requestOrOpenSettings(Manifest.permission.ACCESS_FINE_LOCATION) },
-                        onRequestBluetooth = { requestOrOpenSettings(Manifest.permission.BLUETOOTH_CONNECT) },
-                        onRequestMedia = { requestMediaPermissions() },
-                        onRequestNotifications = {
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                                requestOrOpenSettings(Manifest.permission.POST_NOTIFICATIONS)
-                            }
-                        },
-                        onRequestNotificationListener = { openNotificationListenerSettings() },
-                        onOpenAutostart = { openXiaomiAutostart() },
-                    )
                 }
             }
         }
@@ -120,7 +153,8 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun refreshPermissions() {
-        permissionsState = PermissionsState(
+        val old = permissionsState
+        val new = PermissionsState(
             cameraGranted = hasPermission(Manifest.permission.CAMERA),
             locationGranted = hasPermission(Manifest.permission.ACCESS_FINE_LOCATION),
             bluetoothGranted = hasPermission(Manifest.permission.BLUETOOTH_CONNECT),
@@ -134,6 +168,25 @@ class MainActivity : ComponentActivity() {
             } else true,
             notificationListenerGranted = isNotificationListenerEnabled(),
         )
+        if (permissionsInitialized) {
+            logPermissionChanges(old, new)
+        }
+        permissionsInitialized = true
+        permissionsState = new
+    }
+
+    private fun logPermissionChanges(old: PermissionsState, new: PermissionsState) {
+        fun log(name: String, wasGranted: Boolean, isGranted: Boolean) {
+            if (wasGranted == isGranted) return
+            val change = if (isGranted) "granted" else "revoked"
+            EventLog.info("permission", "$name $change")
+        }
+        log("Camera", old.cameraGranted, new.cameraGranted)
+        log("Location", old.locationGranted, new.locationGranted)
+        log("Bluetooth", old.bluetoothGranted, new.bluetoothGranted)
+        log("Media files", old.mediaGranted, new.mediaGranted)
+        log("Notifications", old.notificationsGranted, new.notificationsGranted)
+        log("Notification listener", old.notificationListenerGranted, new.notificationListenerGranted)
     }
 
     private fun hasPermission(permission: String): Boolean =

@@ -1,6 +1,7 @@
 package com.alessandroannini.mcpdroid.server
 
 import android.util.Log
+import com.alessandroannini.mcpdroid.infra.EventLog
 import io.modelcontextprotocol.kotlin.sdk.types.CallToolResult
 import io.modelcontextprotocol.kotlin.sdk.types.TextContent
 import kotlinx.serialization.json.JsonObject
@@ -55,17 +56,25 @@ suspend fun withToolLog(
         val result = block()
         val duration = System.currentTimeMillis() - start
         val outcome = if (result.isError == true) "error" else "success"
+        val detail = "request_id=$requestId duration=${duration}ms"
         Log.i(
             TAG,
             """{"tool":"$toolName","request_id":"$requestId","duration_ms":$duration,"outcome":"$outcome"}"""
         )
+        if (result.isError == true) {
+            EventLog.warn("tool", "$toolName: $outcome", detail)
+        } else {
+            EventLog.info("tool", "$toolName: $outcome", detail)
+        }
         result
     } catch (e: Exception) {
         val duration = System.currentTimeMillis() - start
+        val detail = "request_id=$requestId duration=${duration}ms error=${e.javaClass.simpleName}: ${e.message}"
         Log.e(
             TAG,
             """{"tool":"$toolName","request_id":"$requestId","duration_ms":$duration,"outcome":"error","error_type":"${e.javaClass.simpleName}","error_message":"${e.message}"}"""
         )
+        EventLog.error("tool", "$toolName: error", detail)
         errorResult("Unexpected error in $toolName: ${e.message}")
     }
 }

@@ -68,6 +68,7 @@ data class PermissionsState(
 fun MainScreen(
     state: MainScreenState,
     permissions: PermissionsState = PermissionsState(),
+    modifier: Modifier = Modifier,
     onStartStop: () -> Unit,
     onAutostartToggle: (Boolean) -> Unit,
     onEnableScreenshot: () -> Unit,
@@ -85,7 +86,7 @@ fun MainScreen(
     val primaryAddress = remember(addresses) { addresses.firstOrNull { it.isTailscale } ?: addresses.firstOrNull() }
 
     Column(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxSize()
             .padding(16.dp)
             .verticalScroll(rememberScrollState()),
